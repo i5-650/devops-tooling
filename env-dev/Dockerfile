@@ -5,14 +5,16 @@ ENV POSTGRES_PASSWORD=postgres
 ENV POSTGRES_DB=example_db
 
 # Copy SQL scripts into the Docker container
-COPY ./project1 /docker-entrypoint-initdb.d/
+# Note: you can add as many project as you want
+COPY ./project1 /docker-entrypoint-initdb.d/project1
+COPY ./project2 /docker-entrypoint-initdb.d/project2
+
 
 # Run SQL scripts in sorted order and flatten the directory structure
-RUN mkdir -p /ktmp && \
-    find /docker-entrypoint-initdb.d/ -type f -name '*.sql' | sort -V | while read sqlfile; do \
-        folder_name=$(basename "$(dirname "$sqlfile")"); \
-        file_name=$(basename "$sqlfile"); \
-        new_filename="${folder_name}-${file_name}"; \
-        mv "$sqlfile" "/ktmp/$new_filename"; \
-    done && \
-    mv /ktmp/*.sql /docker-entrypoint-initdb.d/
+RUN find /docker-entrypoint-initdb.d/ -type f -name '*.sql' | sort -V | while read sqlfile; do \
+  folder_name=$(basename "$(dirname "$sqlfile")"); \
+  file_name=$(basename "$sqlfile"); \
+  new_filename="${folder_name}-${file_name}"; \
+  mv "$sqlfile" "/docker-entrypoint-initdb.d/$new_filename"; \
+  done && \
+  chmod +r /docker-entrypoint-initdb.d/*.sql

@@ -1,5 +1,5 @@
 services:
-  db:
+  postgresql:
     build: .
     environment:
       POSTGRES_USER: postgres 
@@ -7,29 +7,56 @@ services:
       POSTGRES_DB: example_db
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     networks:
       - db_network
+    volumes:
+      - pgdata:/var/lib/postgresql/data 
 
   pgadmin:
     image: dpage/pgadmin4
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@gci.fr
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: 'dev@env.fr'
+      PGADMIN_DEFAULT_PASSWORD: dev 
+      PGPASS_FILE: '/pgpass'
       PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
     ports:
       - "8080:80"
-    volumes:
-      - ./servers.json:/pgadmin4/servers.json
-      - ./pgpass:/pgpass
+    configs:
+      - source: servers.json
+        target: /pgadmin4/servers.json
+      - source: pgpass
+        target: /pgpass
     depends_on:
-      - db
+      -  postgresql 
     networks:
       - db_network
-
-volumes:
-  postgres_data:
+    user: root
+    entrypoint: >
+      sh -c "chmod 600 /pgpass && /entrypoint.sh"
 
 networks:
   db_network:
+
+volumes:
+  pgdata:
+
+configs:
+  pgpass:
+    content: postgresql:5432:*:postgres:postgres
+  servers.json:
+    content: |
+        {
+          "Servers": {
+            "1": {
+              "Name": "example server",
+              "Group": "Servers",
+              "Host": "postgresql",
+              "Port": 5432,
+              "MaintenanceDB": "postgres",
+              "Username": "postgres",
+              "PassFile": "/pgpass",
+              "SSLMode": "prefer"
+            }
+          }
+        }
