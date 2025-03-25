@@ -11,10 +11,14 @@ COPY ./project2 /docker-entrypoint-initdb.d/project2
 
 
 # Run SQL scripts in sorted order and flatten the directory structure
-RUN find /docker-entrypoint-initdb.d/ -type f -name '*.sql' | sort -V | while read sqlfile; do \
-  folder_name=$(basename "$(dirname "$sqlfile")"); \
-  file_name=$(basename "$sqlfile"); \
-  new_filename="${folder_name}-${file_name}"; \
-  mv "$sqlfile" "/docker-entrypoint-initdb.d/$new_filename"; \
-  done && \
-  chmod +r /docker-entrypoint-initdb.d/*.sql
+RUN i=1; \
+    find /docker-entrypoint-initdb.d/ -type f -name '*.sql' | sort -V | while read sqlfile; do \
+    folder_name=$(basename "$(dirname "$sqlfile")"); \
+    file_name=$(basename "$sqlfile"); \
+    # Formater le numéro avec left-pad (5 chiffres, zéros à gauche)
+    padded_number=$(printf "%05d" "$i"); \
+    new_filename="${padded_number}-${folder_name}-${file_name}"; \
+    mv "$sqlfile" "/docker-entrypoint-initdb.d/$new_filename"; \
+    i=$((i + 1)); \
+    done && \
+    chmod +r /docker-entrypoint-initdb.d/*.sql
